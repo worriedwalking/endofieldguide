@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>endometriosis research library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root{
+    --paper:#F6F3EE;
+    --paper-raised:#FFFFFF;
+    --ink:#232128;
+    --ink-soft:#5C5760;
+    --line:#DDD6C9;
+    --berry:#7A2E3E;
+    --berry-soft:#F1DFE2;
+    --teal:#2F5D62;
+    --ev-clinical:#2F5D62;
+    --ev-review:#5C8C7F;
+    --ev-expert:#B98544;
+    --ev-anecdote:#A24B4B;
+    --ev-na:#9C9690;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:15px;
+    line-height:1.5;
+  }
+  header{
+    padding:56px 32px 28px;
+    max-width:1180px;
+    margin:0 auto;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--berry);
+    margin-bottom:10px;
+  }
+  h1{
+    font-family:'Source Serif 4', serif;
+    font-weight:600;
+    font-size:clamp(30px,4vw,44px);
+    margin:0 0 10px;
+    letter-spacing:-0.01em;
+  }
+  .sub{
+    color:var(--ink-soft);
+    max-width:640px;
+    font-size:15.5px;
+    margin-bottom:22px;
+  }
+  .cycle-divider{
+    display:flex;
+    gap:6px;
+    align-items:center;
+    margin:20px 0 26px;
+  }
+  .cycle-divider span{
+    height:5px;
+    width:5px;
+    border-radius:50%;
+    background:var(--berry);
+  }
+  .cycle-divider .bar{
+    height:1px;
+    flex:1;
+    background:var(--line);
+  }
+  .stats{
+    display:flex;
+    gap:28px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .stats b{
+    color:var(--ink);
+    font-size:15px;
+    font-family:'IBM Plex Sans',sans-serif;
+    font-weight:600;
+  }
+
+  .toolbar{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0 32px 20px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+  }
+  input[type=text], select{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:14px;
+    padding:9px 12px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    background:var(--paper-raised);
+    color:var(--ink);
+  }
+  input[type=text]{
+    flex:1 1 220px;
+    min-width:180px;
+  }
+  select{cursor:pointer;}
+  button.clear{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:13px;
+    padding:9px 14px;
+    border-radius:7px;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  button.clear:hover{border-color:var(--berry);color:var(--berry);}
+
+  main{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0 32px 80px;
+  }
+  .table-wrap{
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+    background:var(--paper-raised);
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+  }
+  thead th{
+    text-align:left;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    padding:13px 14px;
+    border-bottom:1px solid var(--line);
+    background:var(--paper);
+    position:sticky;
+    top:0;
+  }
+  tbody tr.row{
+    cursor:pointer;
+    border-bottom:1px solid var(--line);
+  }
+  tbody tr.row:hover{background:#FBF8F3;}
+  tbody tr.row:last-child{border-bottom:none;}
+  td{padding:13px 14px; vertical-align:top;}
+  td.title-cell{font-weight:500; max-width:280px;}
+  td.title-cell .authors{
+    display:block;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    font-weight:400;
+    margin-top:2px;
+  }
+  .badge{
+    display:inline-block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    padding:3px 8px;
+    border-radius:20px;
+    color:#fff;
+    white-space:nowrap;
+  }
+  .tag{
+    display:inline-block;
+    font-size:12px;
+    padding:2px 8px;
+    border-radius:5px;
+    background:var(--berry-soft);
+    color:var(--berry);
+    margin:1px 3px 1px 0;
+  }
+  .detail-row td{
+    background:#FBF8F3;
+    padding:0 14px 22px;
+  }
+  .detail-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+    padding-top:6px;
+  }
+  .detail-block h4{
+    margin:0 0 6px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--berry);
+  }
+  .detail-block p{margin:0; color:var(--ink); font-size:14px;}
+  .detail-block ul{margin:4px 0 0; padding-left:18px; font-size:14px;}
+  .empty{
+    padding:60px 20px;
+    text-align:center;
+    color:var(--ink-soft);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+  }
+  a.source-link{color:var(--teal); text-decoration:none; font-size:13px;}
+  a.source-link:hover{text-decoration:underline;}
+  .chev{
+    display:inline-block;
+    transition:transform .15s ease;
+    color:var(--ink-soft);
+    margin-right:6px;
+  }
+  tr.row.open .chev{transform:rotate(90deg);}
+  .add-form{
+    max-width:1180px;
+    margin:0 auto;
+    padding:18px 32px 30px;
+  }
+  .add-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:12px 16px;
+    margin-bottom:12px;
+  }
+  .add-form label{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+  .add-form label.wide{margin-bottom:12px;}
+  .add-form input, .add-form select, .add-form textarea{
+    font-family:'IBM Plex Sans', sans-serif;
+    text-transform:none;
+    letter-spacing:normal;
+    font-size:14px;
+    padding:8px 10px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:var(--paper-raised);
+    color:var(--ink);
+    resize:vertical;
+  }
+  .add-hint{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-top:10px;
+  }
+  @media (max-width:720px){
+    .add-grid{grid-template-columns:1fr;}
+    .detail-grid{grid-template-columns:1fr;}
+    thead{display:none;}
+    table, tbody, tr, td{display:block; width:100%;}
+    tr.row{padding:10px 0;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">research index</div>
+  <h1>endometriosis library</h1>
+  <p class="sub">every paper, article and account collected in one place. plain language summary up top, full detail one click away, source always linked.</p>
+  <div class="cycle-divider">
+    <span></span><span style="opacity:.7"></span><span style="opacity:.45"></span><span style="opacity:.2"></span>
+    <div class="bar"></div>
+  </div>
+  <div class="stats" id="stats"></div>
+</header>
+
+<div class="toolbar">
+  <input type="text" id="search" placeholder="search title, keywords, summary...">
+  <select id="filterTopic"><option value="">all topics</option></select>
+  <select id="filterSource"><option value="">all source types</option></select>
+  <select id="filterEvidence"><option value="">all evidence levels</option></select>
+  <button class="clear" id="clearBtn">clear filters</button>
+  <button class="clear" id="addToggle" style="margin-left:auto">+ add entry</button>
+</div>
+
+<div id="addPanel" style="display:none;">
+  <div class="add-form">
+    <div class="add-grid">
+      <label>title<input type="text" id="f_title"></label>
+      <label>source type
+        <select id="f_source_type">
+          <option value="Paper">Paper</option>
+          <option value="Website">Website</option>
+          <option value="Personal anecdote">Personal anecdote</option>
+          <option value="Forum post">Forum post</option>
+          <option value="Video">Video</option>
+          <option value="Other">Other</option>
+        </select>
+      </label>
+      <label>authors<input type="text" id="f_authors" placeholder="blank if n/a"></label>
+      <label>year<input type="text" id="f_year"></label>
+      <label>source name<input type="text" id="f_source_name" placeholder="journal or site name"></label>
+      <label>link<input type="text" id="f_link"></label>
+      <label>topic tag<input type="text" id="f_topic_tag"></label>
+      <label>subtopic tags<input type="text" id="f_subtopic_tags" placeholder="separate with ;"></label>
+      <label>keywords<input type="text" id="f_keywords" placeholder="separate with ;"></label>
+      <label>evidence level
+        <select id="f_evidence_level">
+          <option value="clinical study">clinical study</option>
+          <option value="systematic review">systematic review</option>
+          <option value="expert opinion">expert opinion</option>
+          <option value="personal anecdote">personal anecdote</option>
+          <option value="n/a">n/a</option>
+        </select>
+      </label>
+      <label>peer reviewed
+        <select id="f_peer_reviewed">
+          <option value="yes">yes</option>
+          <option value="no">no</option>
+          <option value="n/a">n/a</option>
+        </select>
+      </label>
+      <label>methodology type<input type="text" id="f_methodology_type" placeholder="blank if n/a"></label>
+    </div>
+    <label class="wide">plain language summary<textarea id="f_plain_summary" rows="2"></textarea></label>
+    <label class="wide">why it matters / relevance<textarea id="f_relevance" rows="2"></textarea></label>
+    <label class="wide">abstract or excerpt<textarea id="f_abstract_excerpt" rows="2"></textarea></label>
+    <label class="wide">key findings<textarea id="f_key_findings" rows="2" placeholder="separate points with ;"></textarea></label>
+    <div style="display:flex; gap:10px; margin-top:6px;">
+      <button class="clear" id="generateBtn" style="border-color:var(--berry); color:var(--berry)">generate csv line</button>
+      <button class="clear" id="copyBtn" style="display:none;">copy to clipboard</button>
+    </div>
+    <textarea id="csvOutput" readonly style="display:none; width:100%; margin-top:10px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; padding:10px; border:1px solid var(--line); border-radius:7px; background:var(--paper);" rows="3"></textarea>
+    <p class="add-hint">paste the generated line as a new row at the bottom of entries.csv, keeping the column order intact.</p>
+  </div>
+</div>
+
+<main>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:26%">entry</th>
+          <th style="width:12%">topic</th>
+          <th style="width:14%">source</th>
+          <th style="width:16%">evidence</th>
+          <th style="width:8%">year</th>
+          <th style="width:24%">summary</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="empty" id="emptyMsg" style="display:none;">nothing matches those filters</div>
+  </div>
+</main>
+
+<script>
+const EVIDENCE_COLORS = {
+  'clinical study': 'var(--ev-clinical)',
+  'systematic review': 'var(--ev-review)',
+  'expert opinion': 'var(--ev-expert)',
+  'personal anecdote': 'var(--ev-anecdote)'
+};
+function evidenceColor(level){
+  return EVIDENCE_COLORS[(level||'').toLowerCase().trim()] || 'var(--ev-na)';
+}
+
+let ALL_ROWS = [];
+
+function renderFilters(rows){
+  const topics = [...new Set(rows.map(r=>r.topic_tag).filter(Boolean))].sort();
+  const sources = [...new Set(rows.map(r=>r.source_type).filter(Boolean))].sort();
+  const evidences = [...new Set(rows.map(r=>r.evidence_level).filter(Boolean))].sort();
+  const fill = (id, items) => {
+    const sel = document.getElementById(id);
+    items.forEach(v=>{
+      const opt = document.createElement('option');
+      opt.value = v; opt.textContent = v;
+      sel.appendChild(opt);
+    });
+  };
+  fill('filterTopic', topics);
+  fill('filterSource', sources);
+  fill('filterEvidence', evidences);
+}
+
+function matchesFilters(row){
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  const topic = document.getElementById('filterTopic').value;
+  const source = document.getElementById('filterSource').value;
+  const evidence = document.getElementById('filterEvidence').value;
+
+  if(topic && row.topic_tag !== topic) return false;
+  if(source && row.source_type !== source) return false;
+  if(evidence && row.evidence_level !== evidence) return false;
+
+  if(q){
+    const haystack = [row.title,row.authors,row.keywords,row.plain_summary,row.subtopic_tags]
+      .join(' ').toLowerCase();
+    if(!haystack.includes(q)) return false;
+  }
+  return true;
+}
+
+function esc(str){
+  if(str==null) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function buildDetail(row){
+  const findings = (row.key_findings||'').split(';').filter(Boolean).map(f=>`<li>${esc(f.trim())}</li>`).join('');
+  return `
+    <div class="detail-grid">
+      <div class="detail-block">
+        <h4>why it matters</h4>
+        <p>${esc(row.relevance) || '—'}</p>
+      </div>
+      <div class="detail-block">
+        <h4>methodology</h4>
+        <p>${esc(row.methodology_type) || 'n/a'} ${row.peer_reviewed && row.peer_reviewed !== 'n/a' ? '· peer reviewed: ' + esc(row.peer_reviewed) : ''}</p>
+      </div>
+      <div class="detail-block">
+        <h4>abstract / excerpt</h4>
+        <p>${esc(row.abstract_excerpt) || '—'}</p>
+      </div>
+      <div class="detail-block">
+        <h4>key findings</h4>
+        ${findings ? `<ul>${findings}</ul>` : '<p>—</p>'}
+      </div>
+    </div>
+  `;
+}
+
+function render(){
+  const tbody = document.getElementById('tbody');
+  const filtered = ALL_ROWS.filter(matchesFilters);
+  tbody.innerHTML = '';
+  document.getElementById('emptyMsg').style.display = filtered.length ? 'none' : 'block';
+
+  filtered.forEach((row, i) => {
+    const tr = document.createElement('tr');
+    tr.className = 'row';
+    const subtags = (row.subtopic_tags||'').split(';').filter(Boolean).map(t=>`<span class="tag">${esc(t.trim())}</span>`).join('');
+    tr.innerHTML = `
+      <td class="title-cell"><span class="chev">›</span>${esc(row.title)}<span class="authors">${esc(row.authors)||'—'}</span></td>
+      <td>${esc(row.topic_tag)}<div>${subtags}</div></td>
+      <td>${esc(row.source_type)}<br><a class="source-link" href="${esc(row.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${row.link ? 'view source ↗' : ''}</a></td>
+      <td><span class="badge" style="background:${evidenceColor(row.evidence_level)}">${esc(row.evidence_level)||'n/a'}</span></td>
+      <td>${esc(row.year)}</td>
+      <td>${esc(row.plain_summary)}</td>
+    `;
+    const detailTr = document.createElement('tr');
+    detailTr.className = 'detail-row';
+    detailTr.style.display = 'none';
+    detailTr.innerHTML = `<td colspan="6">${buildDetail(row)}</td>`;
+
+    tr.addEventListener('click', ()=>{
+      const isOpen = tr.classList.contains('open');
+      tr.classList.toggle('open');
+      detailTr.style.display = isOpen ? 'none' : 'table-row';
+    });
+
+    tbody.appendChild(tr);
+    tbody.appendChild(detailTr);
+  });
+}
+
+function renderStats(){
+  const total = ALL_ROWS.length;
+  const papers = ALL_ROWS.filter(r=>(r.source_type||'').toLowerCase()==='paper').length;
+  const other = total - papers;
+  document.getElementById('stats').innerHTML = `
+    <div><b>${total}</b> total entries</div>
+    <div><b>${papers}</b> peer reviewed papers</div>
+    <div><b>${other}</b> other sources</div>
+  `;
+}
+
+['search','filterTopic','filterSource','filterEvidence'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', render);
+  document.getElementById(id).addEventListener('change', render);
+});
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  document.getElementById('search').value='';
+  document.getElementById('filterTopic').value='';
+  document.getElementById('filterSource').value='';
+  document.getElementById('filterEvidence').value='';
+  render();
+});
+
+document.getElementById('addToggle').addEventListener('click', ()=>{
+  const panel = document.getElementById('addPanel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+});
+
+function csvField(val){
+  val = (val||'').trim();
+  if(val.includes(',') || val.includes('"') || val.includes('\n')){
+    return '"' + val.replace(/"/g,'""') + '"';
+  }
+  return val;
+}
+
+document.getElementById('generateBtn').addEventListener('click', ()=>{
+  const fields = [
+    'f_title','f_source_type','f_authors','f_year','f_source_name','f_link',
+    'f_topic_tag','f_subtopic_tags','f_keywords','f_plain_summary','f_relevance',
+    'f_abstract_excerpt','f_key_findings','f_methodology_type','f_peer_reviewed','f_evidence_level'
+  ];
+  const line = fields.map(id => csvField(document.getElementById(id).value)).join(',');
+  const out = document.getElementById('csvOutput');
+  out.value = line;
+  out.style.display = 'block';
+  document.getElementById('copyBtn').style.display = 'inline-block';
+});
+
+document.getElementById('copyBtn').addEventListener('click', ()=>{
+  const out = document.getElementById('csvOutput');
+  out.select();
+  navigator.clipboard.writeText(out.value);
+  const btn = document.getElementById('copyBtn');
+  const original = btn.textContent;
+  btn.textContent = 'copied';
+  setTimeout(()=>{ btn.textContent = original; }, 1400);
+});
+
+Papa.parse('entries.csv', {
+  download:true,
+  header:true,
+  skipEmptyLines:true,
+  complete: function(results){
+    ALL_ROWS = results.data;
+    renderFilters(ALL_ROWS);
+    renderStats();
+    render();
+  },
+  error: function(err){
+    document.getElementById('tbody').innerHTML =
+      `<tr><td colspan="6" style="padding:30px;color:var(--ink-soft)">couldn't load entries.csv — make sure it's in the same folder as this html file.</td></tr>`;
+  }
+});
+</script>
+</body>
+</html>
