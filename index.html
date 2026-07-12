@@ -3,108 +3,137 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>endometriosis research library</title>
+<title>the endometriosis catalog</title>
+
+<!--
+  Same engine as before: one html file, one csv file sitting next to it,
+  javascript reads the csv and draws everything on screen. Nothing
+  changed about how the data flows, this pass was purely about making
+  it look like something a person made rather than a spreadsheet tool.
+
+  The idea: since you spend your days cataloguing and archiving things,
+  this is styled like a card catalog drawer. Each entry is an index
+  card, not a table row. The coloured strip along the top of each card
+  is the same evidence-level colour coding as before, just shown the
+  way an old library catalog used to colour-code its tabs.
+-->
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Karla:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
 <style>
+  /*
+    Palette note: warm parchment paper, oxblood red for the accent (the
+    colour of an old rubber date-stamp, fits the archive feel), and a
+    deep forest green for links, like the green banker's lamps in old
+    reading rooms. Kept the same evidence-level colours as before so
+    nothing about the data logic changed, just how it's presented.
+  */
   :root{
-    --paper:#F6F3EE;
-    --paper-raised:#FFFFFF;
-    --ink:#232128;
-    --ink-soft:#5C5760;
-    --line:#DDD6C9;
-    --berry:#7A2E3E;
-    --berry-soft:#F1DFE2;
-    --teal:#2F5D62;
-    --ev-clinical:#2F5D62;
-    --ev-review:#5C8C7F;
-    --ev-expert:#B98544;
-    --ev-anecdote:#A24B4B;
-    --ev-na:#9C9690;
+    --paper:#EFE3CC;
+    --card:#FBF6EA;
+    --card-line:#D9C6A0;
+    --ink:#2A2118;
+    --ink-soft:#7C6F5C;
+    --stamp:#8B2E3F;
+    --stamp-soft:#EEDAD3;
+    --forest:#3B5D52;
+
+    --tab-clinical:#3B5D52;
+    --tab-review:#7FA285;
+    --tab-expert:#B6862F;
+    --tab-anecdote:#8B2E3F;
+    --tab-na:#A79C8C;
   }
+
   *{box-sizing:border-box;}
+  ::selection{background:var(--stamp-soft);}
+
   body{
     margin:0;
     background:var(--paper);
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(42,33,24,0.045) 1px, transparent 0);
+    background-size:22px 22px; /* a faint paper-grain texture, barely visible, just enough to not look flat digital */
     color:var(--ink);
-    font-family:'IBM Plex Sans', sans-serif;
-    font-size:15px;
-    line-height:1.5;
+    font-family:'Karla', sans-serif;
+    font-size:15.5px;
+    line-height:1.55;
   }
+
+  a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, .card:focus-visible{
+    outline:2px solid var(--stamp);
+    outline-offset:2px;
+  }
+
   header{
-    padding:56px 32px 28px;
+    padding:60px 32px 20px;
     max-width:1180px;
     margin:0 auto;
   }
   .eyebrow{
     font-family:'IBM Plex Mono', monospace;
-    font-size:12px;
-    letter-spacing:.14em;
+    font-size:11.5px;
+    letter-spacing:.12em;
     text-transform:uppercase;
-    color:var(--berry);
-    margin-bottom:10px;
+    color:var(--stamp);
+    margin-bottom:14px;
   }
   h1{
-    font-family:'Source Serif 4', serif;
+    font-family:'Fraunces', serif;
+    font-optical-sizing:auto;
     font-weight:600;
-    font-size:clamp(30px,4vw,44px);
-    margin:0 0 10px;
+    font-size:clamp(32px,4.6vw,52px);
+    margin:0 0 14px;
     letter-spacing:-0.01em;
   }
   .sub{
     color:var(--ink-soft);
-    max-width:640px;
-    font-size:15.5px;
-    margin-bottom:22px;
+    max-width:560px;
+    font-size:16.5px;
+    font-style:italic;
+    margin-bottom:26px;
   }
-  .cycle-divider{
-    display:flex;
-    gap:6px;
-    align-items:center;
-    margin:20px 0 26px;
-  }
-  .cycle-divider span{
-    height:5px;
-    width:5px;
-    border-radius:50%;
-    background:var(--berry);
-  }
-  .cycle-divider .bar{
+
+  /* a stitched-ledger divider instead of a plain hairline, small nod to
+     a bound notebook edge rather than a ui component */
+  .stitch{
     height:1px;
-    flex:1;
-    background:var(--line);
+    background-image:repeating-linear-gradient(90deg, var(--card-line) 0 6px, transparent 6px 12px);
+    margin:0 0 22px;
   }
+
   .stats{
     display:flex;
-    gap:28px;
-    font-family:'IBM Plex Mono', monospace;
-    font-size:12.5px;
+    gap:26px;
+    flex-wrap:wrap;
+    font-size:14px;
     color:var(--ink-soft);
   }
   .stats b{
-    color:var(--ink);
-    font-size:15px;
-    font-family:'IBM Plex Sans',sans-serif;
+    font-family:'Fraunces', serif;
     font-weight:600;
+    color:var(--ink);
+    font-size:17px;
   }
 
   .toolbar{
     max-width:1180px;
     margin:0 auto;
-    padding:0 32px 20px;
+    padding:8px 32px 24px;
     display:flex;
     flex-wrap:wrap;
     gap:10px;
     align-items:center;
   }
   input[type=text], select{
-    font-family:'IBM Plex Sans', sans-serif;
-    font-size:14px;
-    padding:9px 12px;
-    border:1px solid var(--line);
-    border-radius:7px;
-    background:var(--paper-raised);
+    font-family:'Karla', sans-serif;
+    font-size:14.5px;
+    padding:10px 14px;
+    border:1px solid var(--card-line);
+    border-radius:5px;
+    background:var(--card);
     color:var(--ink);
   }
   input[type=text]{
@@ -113,118 +142,171 @@
   }
   select{cursor:pointer;}
   button.clear{
-    font-family:'IBM Plex Sans', sans-serif;
-    font-size:13px;
-    padding:9px 14px;
-    border-radius:7px;
-    border:1px solid var(--line);
+    font-family:'Karla', sans-serif;
+    font-weight:500;
+    font-size:13.5px;
+    padding:9px 15px;
+    border-radius:5px;
+    border:1px solid var(--card-line);
     background:transparent;
     color:var(--ink-soft);
     cursor:pointer;
   }
-  button.clear:hover{border-color:var(--berry);color:var(--berry);}
+  button.clear:hover{border-color:var(--stamp);color:var(--stamp);}
 
   main{
     max-width:1180px;
     margin:0 auto;
-    padding:0 32px 80px;
+    padding:0 32px 90px;
   }
-  .table-wrap{
-    border:1px solid var(--line);
-    border-radius:10px;
+
+  /* the catalog itself: a responsive grid of cards rather than a table */
+  .catalog{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));
+    gap:20px;
+    align-items:start;
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:3px;
+    cursor:pointer;
+    /* the offset hard shadow (rather than a soft blurred one) is what
+       gives these the stacked, physical index-card feel */
+    box-shadow:4px 4px 0 rgba(42,33,24,0.08);
+    transition:transform .12s ease, box-shadow .12s ease;
     overflow:hidden;
-    background:var(--paper-raised);
   }
-  table{
+  .card:hover{
+    transform:translate(-2px,-2px);
+    box-shadow:6px 6px 0 rgba(42,33,24,0.12);
+  }
+  .card.open{
+    grid-column:1 / -1; /* an open card takes the full row so there's room to read */
+  }
+
+  .card-tab{
+    height:7px;
     width:100%;
-    border-collapse:collapse;
   }
-  thead th{
-    text-align:left;
+  .card-body{
+    padding:18px 20px 16px;
+  }
+  .card-meta{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
     font-family:'IBM Plex Mono', monospace;
     font-size:11px;
-    letter-spacing:.08em;
-    text-transform:uppercase;
     color:var(--ink-soft);
-    padding:13px 14px;
-    border-bottom:1px solid var(--line);
-    background:var(--paper);
-    position:sticky;
-    top:0;
+    margin-bottom:10px;
   }
-  tbody tr.row{
-    cursor:pointer;
-    border-bottom:1px solid var(--line);
+  .card-title{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:18.5px;
+    line-height:1.3;
+    margin:0 0 4px;
   }
-  tbody tr.row:hover{background:#FBF8F3;}
-  tbody tr.row:last-child{border-bottom:none;}
-  td{padding:13px 14px; vertical-align:top;}
-  td.title-cell{font-weight:500; max-width:280px;}
-  td.title-cell .authors{
-    display:block;
-    font-size:12.5px;
+  .card-authors{
+    font-size:13px;
+    font-style:italic;
     color:var(--ink-soft);
-    font-weight:400;
-    margin-top:2px;
+    margin-bottom:10px;
+  }
+  .card-summary{
+    font-size:14.5px;
+    color:var(--ink);
+    margin-bottom:14px;
+  }
+  .card-footer{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+  }
+  .chip{
+    display:inline-block;
+    font-size:12px;
+    padding:3px 10px;
+    border-radius:20px;
+    background:var(--stamp-soft);
+    color:var(--stamp);
   }
   .badge{
     display:inline-block;
     font-family:'IBM Plex Mono', monospace;
-    font-size:11px;
-    padding:3px 8px;
+    font-size:10.5px;
+    letter-spacing:.03em;
+    padding:3px 9px;
     border-radius:20px;
     color:#fff;
     white-space:nowrap;
   }
-  .tag{
-    display:inline-block;
+  .source-tag{
     font-size:12px;
-    padding:2px 8px;
-    border-radius:5px;
-    background:var(--berry-soft);
-    color:var(--berry);
-    margin:1px 3px 1px 0;
+    color:var(--ink-soft);
   }
-  .detail-row td{
-    background:#FBF8F3;
-    padding:0 14px 22px;
+  a.source-link{
+    margin-left:auto;
+    color:var(--forest);
+    text-decoration:none;
+    font-size:13px;
+    font-weight:500;
   }
-  .detail-grid{
+  a.source-link:hover{text-decoration:underline;}
+
+  /* the bit that unfolds when a card is opened, styled like the back of
+     the index card, separated by the same stitched-line motif as the header */
+  .detail{
+    border-top:1px dashed var(--card-line);
+    margin-top:14px;
+    padding-top:14px;
     display:grid;
     grid-template-columns:1fr 1fr;
-    gap:18px;
-    padding-top:6px;
+    gap:16px 24px;
   }
   .detail-block h4{
-    margin:0 0 6px;
+    margin:0 0 5px;
     font-family:'IBM Plex Mono', monospace;
-    font-size:11px;
+    font-size:10.5px;
     letter-spacing:.06em;
     text-transform:uppercase;
-    color:var(--berry);
+    color:var(--stamp);
   }
-  .detail-block p{margin:0; color:var(--ink); font-size:14px;}
+  .detail-block p{margin:0; font-size:14px; color:var(--ink);}
   .detail-block ul{margin:4px 0 0; padding-left:18px; font-size:14px;}
+
   .empty{
-    padding:60px 20px;
+    grid-column:1/-1;
+    padding:70px 20px;
     text-align:center;
     color:var(--ink-soft);
-    font-family:'IBM Plex Mono', monospace;
-    font-size:13px;
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-size:17px;
   }
-  a.source-link{color:var(--teal); text-decoration:none; font-size:13px;}
-  a.source-link:hover{text-decoration:underline;}
-  .chev{
-    display:inline-block;
-    transition:transform .15s ease;
-    color:var(--ink-soft);
-    margin-right:6px;
-  }
-  tr.row.open .chev{transform:rotate(90deg);}
+
+  /* the add-entry drawer, same card language, just laid out as a form */
   .add-form{
     max-width:1180px;
     margin:0 auto;
-    padding:18px 32px 30px;
+    padding:4px 32px 30px;
+  }
+  .add-form-inner{
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:6px;
+    padding:22px 24px;
+    box-shadow:4px 4px 0 rgba(42,33,24,0.06);
+  }
+  .add-form-inner h3{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:19px;
+    margin:0 0 16px;
   }
   .add-grid{
     display:grid;
@@ -235,55 +317,46 @@
   .add-form label{
     display:flex;
     flex-direction:column;
-    gap:4px;
-    font-family:'IBM Plex Mono', monospace;
-    font-size:11px;
-    letter-spacing:.04em;
-    text-transform:uppercase;
+    gap:5px;
+    font-size:13px;
     color:var(--ink-soft);
   }
   .add-form label.wide{margin-bottom:12px;}
   .add-form input, .add-form select, .add-form textarea{
-    font-family:'IBM Plex Sans', sans-serif;
-    text-transform:none;
-    letter-spacing:normal;
+    font-family:'Karla', sans-serif;
     font-size:14px;
     padding:8px 10px;
-    border:1px solid var(--line);
-    border-radius:6px;
-    background:var(--paper-raised);
+    border:1px solid var(--card-line);
+    border-radius:5px;
+    background:#fff;
     color:var(--ink);
     resize:vertical;
   }
   .add-hint{
-    font-size:12.5px;
+    font-size:13px;
     color:var(--ink-soft);
     margin-top:10px;
   }
+
   @media (max-width:720px){
+    .catalog{grid-template-columns:1fr;}
+    .detail{grid-template-columns:1fr;}
     .add-grid{grid-template-columns:1fr;}
-    .detail-grid{grid-template-columns:1fr;}
-    thead{display:none;}
-    table, tbody, tr, td{display:block; width:100%;}
-    tr.row{padding:10px 0;}
   }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="eyebrow">research index</div>
-  <h1>endometriosis library</h1>
-  <p class="sub">every paper, article and account collected in one place. plain language summary up top, full detail one click away, source always linked.</p>
-  <div class="cycle-divider">
-    <span></span><span style="opacity:.7"></span><span style="opacity:.45"></span><span style="opacity:.2"></span>
-    <div class="bar"></div>
-  </div>
+  <div class="eyebrow">a running catalog</div>
+  <h1>the endometriosis library</h1>
+  <p class="sub">papers, sites, and firsthand accounts, gathered in one drawer. read the plain-language line on the front of the card, or pull it open for the full record.</p>
+  <div class="stitch"></div>
   <div class="stats" id="stats"></div>
 </header>
 
 <div class="toolbar">
-  <input type="text" id="search" placeholder="search title, keywords, summary...">
+  <input type="text" id="search" placeholder="search the catalog...">
   <select id="filterTopic"><option value="">all topics</option></select>
   <select id="filterSource"><option value="">all source types</option></select>
   <select id="filterEvidence"><option value="">all evidence levels</option></select>
@@ -291,86 +364,87 @@
   <button class="clear" id="addToggle" style="margin-left:auto">+ add entry</button>
 </div>
 
+<!--
+  Hidden until "+ add entry" is clicked. It doesn't save anything on its
+  own, there's no backend, it just lines up whatever you type into a
+  properly formatted csv line for you to paste into entries.csv.
+-->
 <div id="addPanel" style="display:none;">
   <div class="add-form">
-    <div class="add-grid">
-      <label>title<input type="text" id="f_title"></label>
-      <label>source type
-        <select id="f_source_type">
-          <option value="Paper">Paper</option>
-          <option value="Website">Website</option>
-          <option value="Personal anecdote">Personal anecdote</option>
-          <option value="Forum post">Forum post</option>
-          <option value="Video">Video</option>
-          <option value="Other">Other</option>
-        </select>
-      </label>
-      <label>authors<input type="text" id="f_authors" placeholder="blank if n/a"></label>
-      <label>year<input type="text" id="f_year"></label>
-      <label>source name<input type="text" id="f_source_name" placeholder="journal or site name"></label>
-      <label>link<input type="text" id="f_link"></label>
-      <label>topic tag<input type="text" id="f_topic_tag"></label>
-      <label>subtopic tags<input type="text" id="f_subtopic_tags" placeholder="separate with ;"></label>
-      <label>keywords<input type="text" id="f_keywords" placeholder="separate with ;"></label>
-      <label>evidence level
-        <select id="f_evidence_level">
-          <option value="clinical study">clinical study</option>
-          <option value="systematic review">systematic review</option>
-          <option value="expert opinion">expert opinion</option>
-          <option value="personal anecdote">personal anecdote</option>
-          <option value="n/a">n/a</option>
-        </select>
-      </label>
-      <label>peer reviewed
-        <select id="f_peer_reviewed">
-          <option value="yes">yes</option>
-          <option value="no">no</option>
-          <option value="n/a">n/a</option>
-        </select>
-      </label>
-      <label>methodology type<input type="text" id="f_methodology_type" placeholder="blank if n/a"></label>
+    <div class="add-form-inner">
+      <h3>log a new entry</h3>
+      <div class="add-grid">
+        <label>title<input type="text" id="f_title"></label>
+        <label>source type
+          <select id="f_source_type">
+            <option value="Paper">Paper</option>
+            <option value="Website">Website</option>
+            <option value="Personal anecdote">Personal anecdote</option>
+            <option value="Forum post">Forum post</option>
+            <option value="Video">Video</option>
+            <option value="Other">Other</option>
+          </select>
+        </label>
+        <label>authors<input type="text" id="f_authors" placeholder="blank if n/a"></label>
+        <label>year<input type="text" id="f_year"></label>
+        <label>source name<input type="text" id="f_source_name" placeholder="journal or site name"></label>
+        <label>link<input type="text" id="f_link"></label>
+        <label>topic tag<input type="text" id="f_topic_tag"></label>
+        <label>subtopic tags<input type="text" id="f_subtopic_tags" placeholder="separate with ;"></label>
+        <label>keywords<input type="text" id="f_keywords" placeholder="separate with ;"></label>
+        <label>evidence level
+          <select id="f_evidence_level">
+            <option value="clinical study">clinical study</option>
+            <option value="systematic review">systematic review</option>
+            <option value="expert opinion">expert opinion</option>
+            <option value="personal anecdote">personal anecdote</option>
+            <option value="n/a">n/a</option>
+          </select>
+        </label>
+        <label>peer reviewed
+          <select id="f_peer_reviewed">
+            <option value="yes">yes</option>
+            <option value="no">no</option>
+            <option value="n/a">n/a</option>
+          </select>
+        </label>
+        <label>methodology type<input type="text" id="f_methodology_type" placeholder="blank if n/a"></label>
+      </div>
+      <label class="wide">plain language summary<textarea id="f_plain_summary" rows="2"></textarea></label>
+      <label class="wide">why it matters / relevance<textarea id="f_relevance" rows="2"></textarea></label>
+      <label class="wide">abstract or excerpt<textarea id="f_abstract_excerpt" rows="2"></textarea></label>
+      <label class="wide">key findings<textarea id="f_key_findings" rows="2" placeholder="separate points with ;"></textarea></label>
+      <div style="display:flex; gap:10px; margin-top:6px;">
+        <button class="clear" id="generateBtn" style="border-color:var(--stamp); color:var(--stamp)">generate csv line</button>
+        <button class="clear" id="copyBtn" style="display:none;">copy to clipboard</button>
+      </div>
+      <textarea id="csvOutput" readonly style="display:none; width:100%; margin-top:10px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; padding:10px; border:1px solid var(--card-line); border-radius:5px; background:var(--paper);" rows="3"></textarea>
+      <p class="add-hint">paste the generated line as a new row at the bottom of entries.csv, keeping the column order intact.</p>
     </div>
-    <label class="wide">plain language summary<textarea id="f_plain_summary" rows="2"></textarea></label>
-    <label class="wide">why it matters / relevance<textarea id="f_relevance" rows="2"></textarea></label>
-    <label class="wide">abstract or excerpt<textarea id="f_abstract_excerpt" rows="2"></textarea></label>
-    <label class="wide">key findings<textarea id="f_key_findings" rows="2" placeholder="separate points with ;"></textarea></label>
-    <div style="display:flex; gap:10px; margin-top:6px;">
-      <button class="clear" id="generateBtn" style="border-color:var(--berry); color:var(--berry)">generate csv line</button>
-      <button class="clear" id="copyBtn" style="display:none;">copy to clipboard</button>
-    </div>
-    <textarea id="csvOutput" readonly style="display:none; width:100%; margin-top:10px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; padding:10px; border:1px solid var(--line); border-radius:7px; background:var(--paper);" rows="3"></textarea>
-    <p class="add-hint">paste the generated line as a new row at the bottom of entries.csv, keeping the column order intact.</p>
   </div>
 </div>
 
 <main>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th style="width:26%">entry</th>
-          <th style="width:12%">topic</th>
-          <th style="width:14%">source</th>
-          <th style="width:16%">evidence</th>
-          <th style="width:8%">year</th>
-          <th style="width:24%">summary</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
-    <div class="empty" id="emptyMsg" style="display:none;">nothing matches those filters</div>
-  </div>
+  <div class="catalog" id="catalog"></div>
 </main>
 
 <script>
-const EVIDENCE_COLORS = {
-  'clinical study': 'var(--ev-clinical)',
-  'systematic review': 'var(--ev-review)',
-  'expert opinion': 'var(--ev-expert)',
-  'personal anecdote': 'var(--ev-anecdote)'
+/*
+  Same three jobs as always: load the csv, turn each row into a card,
+  redraw when a filter changes. The only real difference from a plain
+  table version is that render() below builds <div class="card"> blocks
+  instead of <tr> rows, and each card holds its own detail panel inside
+  itself instead of a separate row underneath.
+*/
+
+const TAB_COLORS = {
+  'clinical study': 'var(--tab-clinical)',
+  'systematic review': 'var(--tab-review)',
+  'expert opinion': 'var(--tab-expert)',
+  'personal anecdote': 'var(--tab-anecdote)'
 };
-function evidenceColor(level){
-  return EVIDENCE_COLORS[(level||'').toLowerCase().trim()] || 'var(--ev-na)';
+function tabColor(level){
+  return TAB_COLORS[(level||'').toLowerCase().trim()] || 'var(--tab-na)';
 }
 
 let ALL_ROWS = [];
@@ -420,7 +494,7 @@ function esc(str){
 function buildDetail(row){
   const findings = (row.key_findings||'').split(';').filter(Boolean).map(f=>`<li>${esc(f.trim())}</li>`).join('');
   return `
-    <div class="detail-grid">
+    <div class="detail">
       <div class="detail-block">
         <h4>why it matters</h4>
         <p>${esc(row.relevance) || '—'}</p>
@@ -442,36 +516,56 @@ function buildDetail(row){
 }
 
 function render(){
-  const tbody = document.getElementById('tbody');
+  const catalog = document.getElementById('catalog');
   const filtered = ALL_ROWS.filter(matchesFilters);
-  tbody.innerHTML = '';
-  document.getElementById('emptyMsg').style.display = filtered.length ? 'none' : 'block';
+  catalog.innerHTML = '';
+
+  if(!filtered.length){
+    catalog.innerHTML = `<div class="empty">no cards match that search. try clearing a filter.</div>`;
+    return;
+  }
 
   filtered.forEach((row, i) => {
-    const tr = document.createElement('tr');
-    tr.className = 'row';
-    const subtags = (row.subtopic_tags||'').split(';').filter(Boolean).map(t=>`<span class="tag">${esc(t.trim())}</span>`).join('');
-    tr.innerHTML = `
-      <td class="title-cell"><span class="chev">›</span>${esc(row.title)}<span class="authors">${esc(row.authors)||'—'}</span></td>
-      <td>${esc(row.topic_tag)}<div>${subtags}</div></td>
-      <td>${esc(row.source_type)}<br><a class="source-link" href="${esc(row.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${row.link ? 'view source ↗' : ''}</a></td>
-      <td><span class="badge" style="background:${evidenceColor(row.evidence_level)}">${esc(row.evidence_level)||'n/a'}</span></td>
-      <td>${esc(row.year)}</td>
-      <td>${esc(row.plain_summary)}</td>
-    `;
-    const detailTr = document.createElement('tr');
-    detailTr.className = 'detail-row';
-    detailTr.style.display = 'none';
-    detailTr.innerHTML = `<td colspan="6">${buildDetail(row)}</td>`;
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.tabIndex = 0;
 
-    tr.addEventListener('click', ()=>{
-      const isOpen = tr.classList.contains('open');
-      tr.classList.toggle('open');
-      detailTr.style.display = isOpen ? 'none' : 'table-row';
+    const subtags = (row.subtopic_tags||'').split(';').filter(Boolean).map(t=>`<span class="chip">${esc(t.trim())}</span>`).join('');
+    // accession number, purely cosmetic, just gives each card the feel
+    // of a numbered catalog entry, counts from however the list is sorted
+    const accession = 'No. ' + String(i+1).padStart(3,'0');
+
+    card.innerHTML = `
+      <div class="card-tab" style="background:${tabColor(row.evidence_level)}"></div>
+      <div class="card-body">
+        <div class="card-meta"><span>${accession}</span><span>${esc(row.year)||''}</span></div>
+        <h3 class="card-title">${esc(row.title)}</h3>
+        <div class="card-authors">${esc(row.authors) || esc(row.source_name) || '—'}</div>
+        <p class="card-summary">${esc(row.plain_summary)}</p>
+        <div class="card-footer">
+          <span class="chip">${esc(row.topic_tag)}</span>
+          ${subtags}
+          <span class="badge" style="background:${tabColor(row.evidence_level)}">${esc(row.evidence_level)||'n/a'}</span>
+          <span class="source-tag">${esc(row.source_type)}</span>
+          <a class="source-link" href="${esc(row.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${row.link ? 'view source ↗' : ''}</a>
+        </div>
+        <div class="detail-slot"></div>
+      </div>
+    `;
+
+    let open = false;
+    const slot = card.querySelector('.detail-slot');
+    const toggle = ()=>{
+      open = !open;
+      card.classList.toggle('open', open);
+      slot.innerHTML = open ? buildDetail(row) : '';
+    };
+    card.addEventListener('click', toggle);
+    card.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggle(); }
     });
 
-    tbody.appendChild(tr);
-    tbody.appendChild(detailTr);
+    catalog.appendChild(card);
   });
 }
 
@@ -480,8 +574,8 @@ function renderStats(){
   const papers = ALL_ROWS.filter(r=>(r.source_type||'').toLowerCase()==='paper').length;
   const other = total - papers;
   document.getElementById('stats').innerHTML = `
-    <div><b>${total}</b> total entries</div>
-    <div><b>${papers}</b> peer reviewed papers</div>
+    <div><b>${total}</b> entries filed</div>
+    <div><b>${papers}</b> peer reviewed</div>
     <div><b>${other}</b> other sources</div>
   `;
 }
@@ -545,8 +639,8 @@ Papa.parse('entries.csv', {
     render();
   },
   error: function(err){
-    document.getElementById('tbody').innerHTML =
-      `<tr><td colspan="6" style="padding:30px;color:var(--ink-soft)">couldn't load entries.csv — make sure it's in the same folder as this html file.</td></tr>`;
+    document.getElementById('catalog').innerHTML =
+      `<div class="empty">couldn't load entries.csv, make sure it's sitting in the same folder as this html file.</div>`;
   }
 });
 </script>
