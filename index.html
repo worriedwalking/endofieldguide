@@ -4,14 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>the endometriosis catalog</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Karla:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <header>
+  <div class="eyebrow">a running catalog</div>
   <h1>the endometriosis library</h1>
-  <p>papers, sites, and firsthand accounts, gathered in one place. click a card to read more.</p>
+  <p class="sub">papers, sites, and firsthand accounts, gathered in one drawer. read the plain-language line on the front of the card, or pull it open for the full record.</p>
+  <div class="stitch"></div>
   <div class="stats" id="stats"></div>
 </header>
 
@@ -20,14 +26,17 @@
   <select id="filterTopic"><option value="">all topics</option></select>
   <select id="filterSource"><option value="">all source types</option></select>
   <select id="filterEvidence"><option value="">all evidence levels</option></select>
-  <button id="clearBtn">clear filters</button>
+  <button class="clear" id="clearBtn">clear filters</button>
 </div>
+
+
 
 <main>
   <div class="catalog" id="catalog"></div>
 </main>
 
 <script>
+
 const TAB_COLORS = {
   'clinical study': 'var(--tab-clinical)',
   'systematic review': 'var(--tab-review)',
@@ -122,11 +131,14 @@ function render(){
     card.tabIndex = 0;
 
     const subtags = (row.subtopic_tags||'').split(';').filter(Boolean).map(t=>`<span class="chip">${esc(t.trim())}</span>`).join('');
+    // accession number, purely cosmetic, just gives each card the feel
+    // of a numbered catalog entry, counts from however the list is sorted
+    const accession = 'No. ' + String(i+1).padStart(3,'0');
 
     card.innerHTML = `
       <div class="card-tab" style="background:${tabColor(row.evidence_level)}"></div>
       <div class="card-body">
-        <div class="card-meta"><span>${esc(row.year)||''}</span></div>
+        <div class="card-meta"><span>${accession}</span><span>${esc(row.year)||''}</span></div>
         <h3 class="card-title">${esc(row.title)}</h3>
         <div class="card-authors">${esc(row.authors) || esc(row.source_name) || '—'}</div>
         <p class="card-summary">${esc(row.plain_summary)}</p>
@@ -135,7 +147,7 @@ function render(){
           ${subtags}
           <span class="badge" style="background:${tabColor(row.evidence_level)}">${esc(row.evidence_level)||'n/a'}</span>
           <span class="source-tag">${esc(row.source_type)}</span>
-          <a class="source-link" href="${esc(row.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${row.link ? 'view source' : ''}</a>
+          <a class="source-link" href="${esc(row.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${row.link ? 'view source ↗' : ''}</a>
         </div>
         <div class="detail-slot"></div>
       </div>
@@ -162,9 +174,9 @@ function renderStats(){
   const papers = ALL_ROWS.filter(r=>(r.source_type||'').toLowerCase()==='paper').length;
   const other = total - papers;
   document.getElementById('stats').innerHTML = `
-    <span><b>${total}</b> entries</span>
-    <span><b>${papers}</b> peer reviewed</span>
-    <span><b>${other}</b> other sources</span>
+    <div><b>${total}</b> entries filed</div>
+    <div><b>${papers}</b> peer reviewed</div>
+    <div><b>${other}</b> other sources</div>
   `;
 }
 
@@ -178,6 +190,42 @@ document.getElementById('clearBtn').addEventListener('click', ()=>{
   document.getElementById('filterSource').value='';
   document.getElementById('filterEvidence').value='';
   render();
+});
+
+document.getElementById('addToggle').addEventListener('click', ()=>{
+  const panel = document.getElementById('addPanel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+});
+
+function csvField(val){
+  val = (val||'').trim();
+  if(val.includes(',') || val.includes('"') || val.includes('\n')){
+    return '"' + val.replace(/"/g,'""') + '"';
+  }
+  return val;
+}
+
+document.getElementById('generateBtn').addEventListener('click', ()=>{
+  const fields = [
+    'f_title','f_source_type','f_authors','f_year','f_source_name','f_link',
+    'f_topic_tag','f_subtopic_tags','f_keywords','f_plain_summary','f_relevance',
+    'f_abstract_excerpt','f_key_findings','f_methodology_type','f_peer_reviewed','f_evidence_level'
+  ];
+  const line = fields.map(id => csvField(document.getElementById(id).value)).join(',');
+  const out = document.getElementById('csvOutput');
+  out.value = line;
+  out.style.display = 'block';
+  document.getElementById('copyBtn').style.display = 'inline-block';
+});
+
+document.getElementById('copyBtn').addEventListener('click', ()=>{
+  const out = document.getElementById('csvOutput');
+  out.select();
+  navigator.clipboard.writeText(out.value);
+  const btn = document.getElementById('copyBtn');
+  const original = btn.textContent;
+  btn.textContent = 'copied';
+  setTimeout(()=>{ btn.textContent = original; }, 1400);
 });
 
 Papa.parse('entries.csv', {
