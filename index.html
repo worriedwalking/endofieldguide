@@ -5,11 +5,345 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>the endometriosis catalog</title>
 
+<!--
+  Same engine as before: one html file, one csv file sitting next to it,
+  javascript reads the csv and draws everything on screen. Nothing
+  changed about how the data flows, this pass was purely about making
+  it look like something a person made rather than a spreadsheet tool.
+
+  The idea: since you spend your days cataloguing and archiving things,
+  this is styled like a card catalog drawer. Each entry is an index
+  card, not a table row. The coloured strip along the top of each card
+  is the same evidence-level colour coding as before, just shown the
+  way an old library catalog used to colour-code its tabs.
+-->
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Karla:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
-<link rel="stylesheet" href="styles.css">
+<style>
+  /*
+    Palette note: warm parchment paper, oxblood red for the accent (the
+    colour of an old rubber date-stamp, fits the archive feel), and a
+    deep forest green for links, like the green banker's lamps in old
+    reading rooms. Kept the same evidence-level colours as before so
+    nothing about the data logic changed, just how it's presented.
+  */
+  :root{
+    --paper:#EFE3CC;
+    --card:#FBF6EA;
+    --card-line:#D9C6A0;
+    --ink:#2A2118;
+    --ink-soft:#7C6F5C;
+    --stamp:#8B2E3F;
+    --stamp-soft:#EEDAD3;
+    --forest:#3B5D52;
+
+    --tab-clinical:#3B5D52;
+    --tab-review:#7FA285;
+    --tab-expert:#B6862F;
+    --tab-anecdote:#8B2E3F;
+    --tab-na:#A79C8C;
+  }
+
+  *{box-sizing:border-box;}
+  ::selection{background:var(--stamp-soft);}
+
+  body{
+    margin:0;
+    background:var(--paper);
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(42,33,24,0.045) 1px, transparent 0);
+    background-size:22px 22px; /* a faint paper-grain texture, barely visible, just enough to not look flat digital */
+    color:var(--ink);
+    font-family:'Karla', sans-serif;
+    font-size:15.5px;
+    line-height:1.55;
+  }
+
+  a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, .card:focus-visible{
+    outline:2px solid var(--stamp);
+    outline-offset:2px;
+  }
+
+  header{
+    padding:60px 32px 20px;
+    max-width:1180px;
+    margin:0 auto;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--stamp);
+    margin-bottom:14px;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-optical-sizing:auto;
+    font-weight:600;
+    font-size:clamp(32px,4.6vw,52px);
+    margin:0 0 14px;
+    letter-spacing:-0.01em;
+  }
+  .sub{
+    color:var(--ink-soft);
+    max-width:560px;
+    font-size:16.5px;
+    font-style:italic;
+    margin-bottom:26px;
+  }
+
+  /* a stitched-ledger divider instead of a plain hairline, small nod to
+     a bound notebook edge rather than a ui component */
+  .stitch{
+    height:1px;
+    background-image:repeating-linear-gradient(90deg, var(--card-line) 0 6px, transparent 6px 12px);
+    margin:0 0 22px;
+  }
+
+  .stats{
+    display:flex;
+    gap:26px;
+    flex-wrap:wrap;
+    font-size:14px;
+    color:var(--ink-soft);
+  }
+  .stats b{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    color:var(--ink);
+    font-size:17px;
+  }
+
+  .toolbar{
+    max-width:1180px;
+    margin:0 auto;
+    padding:8px 32px 24px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+  }
+  input[type=text], select{
+    font-family:'Karla', sans-serif;
+    font-size:14.5px;
+    padding:10px 14px;
+    border:1px solid var(--card-line);
+    border-radius:5px;
+    background:var(--card);
+    color:var(--ink);
+  }
+  input[type=text]{
+    flex:1 1 220px;
+    min-width:180px;
+  }
+  select{cursor:pointer;}
+  button.clear{
+    font-family:'Karla', sans-serif;
+    font-weight:500;
+    font-size:13.5px;
+    padding:9px 15px;
+    border-radius:5px;
+    border:1px solid var(--card-line);
+    background:transparent;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  button.clear:hover{border-color:var(--stamp);color:var(--stamp);}
+
+  main{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0 32px 90px;
+  }
+
+  /* the catalog itself: a responsive grid of cards rather than a table */
+  .catalog{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));
+    gap:20px;
+    align-items:start;
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:3px;
+    cursor:pointer;
+    /* the offset hard shadow (rather than a soft blurred one) is what
+       gives these the stacked, physical index-card feel */
+    box-shadow:4px 4px 0 rgba(42,33,24,0.08);
+    transition:transform .12s ease, box-shadow .12s ease;
+    overflow:hidden;
+  }
+  .card:hover{
+    transform:translate(-2px,-2px);
+    box-shadow:6px 6px 0 rgba(42,33,24,0.12);
+  }
+  .card.open{
+    grid-column:1 / -1; /* an open card takes the full row so there's room to read */
+  }
+
+  .card-tab{
+    height:7px;
+    width:100%;
+  }
+  .card-body{
+    padding:18px 20px 16px;
+  }
+  .card-meta{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-bottom:10px;
+  }
+  .card-title{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:18.5px;
+    line-height:1.3;
+    margin:0 0 4px;
+  }
+  .card-authors{
+    font-size:13px;
+    font-style:italic;
+    color:var(--ink-soft);
+    margin-bottom:10px;
+  }
+  .card-summary{
+    font-size:14.5px;
+    color:var(--ink);
+    margin-bottom:14px;
+  }
+  .card-footer{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+  }
+  .chip{
+    display:inline-block;
+    font-size:12px;
+    padding:3px 10px;
+    border-radius:20px;
+    background:var(--stamp-soft);
+    color:var(--stamp);
+  }
+  .badge{
+    display:inline-block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:.03em;
+    padding:3px 9px;
+    border-radius:20px;
+    color:#fff;
+    white-space:nowrap;
+  }
+  .source-tag{
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  a.source-link{
+    margin-left:auto;
+    color:var(--forest);
+    text-decoration:none;
+    font-size:13px;
+    font-weight:500;
+  }
+  a.source-link:hover{text-decoration:underline;}
+
+  /* the bit that unfolds when a card is opened, styled like the back of
+     the index card, separated by the same stitched-line motif as the header */
+  .detail{
+    border-top:1px dashed var(--card-line);
+    margin-top:14px;
+    padding-top:14px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px 24px;
+  }
+  .detail-block h4{
+    margin:0 0 5px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--stamp);
+  }
+  .detail-block p{margin:0; font-size:14px; color:var(--ink);}
+  .detail-block ul{margin:4px 0 0; padding-left:18px; font-size:14px;}
+
+  .empty{
+    grid-column:1/-1;
+    padding:70px 20px;
+    text-align:center;
+    color:var(--ink-soft);
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-size:17px;
+  }
+
+  /* the add-entry drawer, same card language, just laid out as a form */
+  .add-form{
+    max-width:1180px;
+    margin:0 auto;
+    padding:4px 32px 30px;
+  }
+  .add-form-inner{
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:6px;
+    padding:22px 24px;
+    box-shadow:4px 4px 0 rgba(42,33,24,0.06);
+  }
+  .add-form-inner h3{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:19px;
+    margin:0 0 16px;
+  }
+  .add-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:12px 16px;
+    margin-bottom:12px;
+  }
+  .add-form label{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  .add-form label.wide{margin-bottom:12px;}
+  .add-form input, .add-form select, .add-form textarea{
+    font-family:'Karla', sans-serif;
+    font-size:14px;
+    padding:8px 10px;
+    border:1px solid var(--card-line);
+    border-radius:5px;
+    background:#fff;
+    color:var(--ink);
+    resize:vertical;
+  }
+  .add-hint{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-top:10px;
+  }
+
+  @media (max-width:720px){
+    .catalog{grid-template-columns:1fr;}
+    .detail{grid-template-columns:1fr;}
+    .add-grid{grid-template-columns:1fr;}
+  }
+</style>
 </head>
 <body>
 
@@ -27,15 +361,81 @@
   <select id="filterSource"><option value="">all source types</option></select>
   <select id="filterEvidence"><option value="">all evidence levels</option></select>
   <button class="clear" id="clearBtn">clear filters</button>
+  <button class="clear" id="addToggle" style="margin-left:auto">+ add entry</button>
 </div>
 
-
+<!--
+  Hidden until "+ add entry" is clicked. It doesn't save anything on its
+  own, there's no backend, it just lines up whatever you type into a
+  properly formatted csv line for you to paste into entries.csv.
+-->
+<div id="addPanel" style="display:none;">
+  <div class="add-form">
+    <div class="add-form-inner">
+      <h3>log a new entry</h3>
+      <div class="add-grid">
+        <label>title<input type="text" id="f_title"></label>
+        <label>source type
+          <select id="f_source_type">
+            <option value="Paper">Paper</option>
+            <option value="Website">Website</option>
+            <option value="Personal anecdote">Personal anecdote</option>
+            <option value="Forum post">Forum post</option>
+            <option value="Video">Video</option>
+            <option value="Other">Other</option>
+          </select>
+        </label>
+        <label>authors<input type="text" id="f_authors" placeholder="blank if n/a"></label>
+        <label>year<input type="text" id="f_year"></label>
+        <label>source name<input type="text" id="f_source_name" placeholder="journal or site name"></label>
+        <label>link<input type="text" id="f_link"></label>
+        <label>topic tag<input type="text" id="f_topic_tag"></label>
+        <label>subtopic tags<input type="text" id="f_subtopic_tags" placeholder="separate with ;"></label>
+        <label>keywords<input type="text" id="f_keywords" placeholder="separate with ;"></label>
+        <label>evidence level
+          <select id="f_evidence_level">
+            <option value="clinical study">clinical study</option>
+            <option value="systematic review">systematic review</option>
+            <option value="expert opinion">expert opinion</option>
+            <option value="personal anecdote">personal anecdote</option>
+            <option value="n/a">n/a</option>
+          </select>
+        </label>
+        <label>peer reviewed
+          <select id="f_peer_reviewed">
+            <option value="yes">yes</option>
+            <option value="no">no</option>
+            <option value="n/a">n/a</option>
+          </select>
+        </label>
+        <label>methodology type<input type="text" id="f_methodology_type" placeholder="blank if n/a"></label>
+      </div>
+      <label class="wide">plain language summary<textarea id="f_plain_summary" rows="2"></textarea></label>
+      <label class="wide">why it matters / relevance<textarea id="f_relevance" rows="2"></textarea></label>
+      <label class="wide">abstract or excerpt<textarea id="f_abstract_excerpt" rows="2"></textarea></label>
+      <label class="wide">key findings<textarea id="f_key_findings" rows="2" placeholder="separate points with ;"></textarea></label>
+      <div style="display:flex; gap:10px; margin-top:6px;">
+        <button class="clear" id="generateBtn" style="border-color:var(--stamp); color:var(--stamp)">generate csv line</button>
+        <button class="clear" id="copyBtn" style="display:none;">copy to clipboard</button>
+      </div>
+      <textarea id="csvOutput" readonly style="display:none; width:100%; margin-top:10px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; padding:10px; border:1px solid var(--card-line); border-radius:5px; background:var(--paper);" rows="3"></textarea>
+      <p class="add-hint">paste the generated line as a new row at the bottom of entries.csv, keeping the column order intact.</p>
+    </div>
+  </div>
+</div>
 
 <main>
   <div class="catalog" id="catalog"></div>
 </main>
 
 <script>
+/*
+  Same three jobs as always: load the csv, turn each row into a card,
+  redraw when a filter changes. The only real difference from a plain
+  table version is that render() below builds <div class="card"> blocks
+  instead of <tr> rows, and each card holds its own detail panel inside
+  itself instead of a separate row underneath.
+*/
 
 const TAB_COLORS = {
   'clinical study': 'var(--tab-clinical)',
