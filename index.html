@@ -289,59 +289,9 @@
     font-size:17px;
   }
 
-  /* the add-entry drawer, same card language, just laid out as a form */
-  .add-form{
-    max-width:1180px;
-    margin:0 auto;
-    padding:4px 32px 30px;
-  }
-  .add-form-inner{
-    background:var(--card);
-    border:1px solid var(--card-line);
-    border-radius:6px;
-    padding:22px 24px;
-    box-shadow:4px 4px 0 rgba(42,33,24,0.06);
-  }
-  .add-form-inner h3{
-    font-family:'Fraunces', serif;
-    font-weight:600;
-    font-size:19px;
-    margin:0 0 16px;
-  }
-  .add-grid{
-    display:grid;
-    grid-template-columns:repeat(3, 1fr);
-    gap:12px 16px;
-    margin-bottom:12px;
-  }
-  .add-form label{
-    display:flex;
-    flex-direction:column;
-    gap:5px;
-    font-size:13px;
-    color:var(--ink-soft);
-  }
-  .add-form label.wide{margin-bottom:12px;}
-  .add-form input, .add-form select, .add-form textarea{
-    font-family:'Karla', sans-serif;
-    font-size:14px;
-    padding:8px 10px;
-    border:1px solid var(--card-line);
-    border-radius:5px;
-    background:#fff;
-    color:var(--ink);
-    resize:vertical;
-  }
-  .add-hint{
-    font-size:13px;
-    color:var(--ink-soft);
-    margin-top:10px;
-  }
-
   @media (max-width:720px){
     .catalog{grid-template-columns:1fr;}
     .detail{grid-template-columns:1fr;}
-    .add-grid{grid-template-columns:1fr;}
   }
 </style>
 </head>
@@ -361,67 +311,6 @@
   <select id="filterSource"><option value="">all source types</option></select>
   <select id="filterEvidence"><option value="">all evidence levels</option></select>
   <button class="clear" id="clearBtn">clear filters</button>
-  <button class="clear" id="addToggle" style="margin-left:auto">+ add entry</button>
-</div>
-
-<!--
-  Hidden until "+ add entry" is clicked. It doesn't save anything on its
-  own, there's no backend, it just lines up whatever you type into a
-  properly formatted csv line for you to paste into entries.csv.
--->
-<div id="addPanel" style="display:none;">
-  <div class="add-form">
-    <div class="add-form-inner">
-      <h3>log a new entry</h3>
-      <div class="add-grid">
-        <label>title<input type="text" id="f_title"></label>
-        <label>source type
-          <select id="f_source_type">
-            <option value="Paper">Paper</option>
-            <option value="Website">Website</option>
-            <option value="Personal anecdote">Personal anecdote</option>
-            <option value="Forum post">Forum post</option>
-            <option value="Video">Video</option>
-            <option value="Other">Other</option>
-          </select>
-        </label>
-        <label>authors<input type="text" id="f_authors" placeholder="blank if n/a"></label>
-        <label>year<input type="text" id="f_year"></label>
-        <label>source name<input type="text" id="f_source_name" placeholder="journal or site name"></label>
-        <label>link<input type="text" id="f_link"></label>
-        <label>topic tag<input type="text" id="f_topic_tag"></label>
-        <label>subtopic tags<input type="text" id="f_subtopic_tags" placeholder="separate with ;"></label>
-        <label>keywords<input type="text" id="f_keywords" placeholder="separate with ;"></label>
-        <label>evidence level
-          <select id="f_evidence_level">
-            <option value="clinical study">clinical study</option>
-            <option value="systematic review">systematic review</option>
-            <option value="expert opinion">expert opinion</option>
-            <option value="personal anecdote">personal anecdote</option>
-            <option value="n/a">n/a</option>
-          </select>
-        </label>
-        <label>peer reviewed
-          <select id="f_peer_reviewed">
-            <option value="yes">yes</option>
-            <option value="no">no</option>
-            <option value="n/a">n/a</option>
-          </select>
-        </label>
-        <label>methodology type<input type="text" id="f_methodology_type" placeholder="blank if n/a"></label>
-      </div>
-      <label class="wide">plain language summary<textarea id="f_plain_summary" rows="2"></textarea></label>
-      <label class="wide">why it matters / relevance<textarea id="f_relevance" rows="2"></textarea></label>
-      <label class="wide">abstract or excerpt<textarea id="f_abstract_excerpt" rows="2"></textarea></label>
-      <label class="wide">key findings<textarea id="f_key_findings" rows="2" placeholder="separate points with ;"></textarea></label>
-      <div style="display:flex; gap:10px; margin-top:6px;">
-        <button class="clear" id="generateBtn" style="border-color:var(--stamp); color:var(--stamp)">generate csv line</button>
-        <button class="clear" id="copyBtn" style="display:none;">copy to clipboard</button>
-      </div>
-      <textarea id="csvOutput" readonly style="display:none; width:100%; margin-top:10px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; padding:10px; border:1px solid var(--card-line); border-radius:5px; background:var(--paper);" rows="3"></textarea>
-      <p class="add-hint">paste the generated line as a new row at the bottom of entries.csv, keeping the column order intact.</p>
-    </div>
-  </div>
 </div>
 
 <main>
@@ -590,42 +479,6 @@ document.getElementById('clearBtn').addEventListener('click', ()=>{
   document.getElementById('filterSource').value='';
   document.getElementById('filterEvidence').value='';
   render();
-});
-
-document.getElementById('addToggle').addEventListener('click', ()=>{
-  const panel = document.getElementById('addPanel');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-});
-
-function csvField(val){
-  val = (val||'').trim();
-  if(val.includes(',') || val.includes('"') || val.includes('\n')){
-    return '"' + val.replace(/"/g,'""') + '"';
-  }
-  return val;
-}
-
-document.getElementById('generateBtn').addEventListener('click', ()=>{
-  const fields = [
-    'f_title','f_source_type','f_authors','f_year','f_source_name','f_link',
-    'f_topic_tag','f_subtopic_tags','f_keywords','f_plain_summary','f_relevance',
-    'f_abstract_excerpt','f_key_findings','f_methodology_type','f_peer_reviewed','f_evidence_level'
-  ];
-  const line = fields.map(id => csvField(document.getElementById(id).value)).join(',');
-  const out = document.getElementById('csvOutput');
-  out.value = line;
-  out.style.display = 'block';
-  document.getElementById('copyBtn').style.display = 'inline-block';
-});
-
-document.getElementById('copyBtn').addEventListener('click', ()=>{
-  const out = document.getElementById('csvOutput');
-  out.select();
-  navigator.clipboard.writeText(out.value);
-  const btn = document.getElementById('copyBtn');
-  const original = btn.textContent;
-  btn.textContent = 'copied';
-  setTimeout(()=>{ btn.textContent = original; }, 1400);
 });
 
 Papa.parse('entries.csv', {
