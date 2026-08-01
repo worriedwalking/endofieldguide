@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>the endometriosis library</title>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Karla:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap"
+            rel="stylesheet" />
+
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <header>
+            <div class="eyebrow"><h2>the endometriosis library</h2></div>
+            <p class="sub">
+                use this page to contact us about an entry or <a href="./">click here to view the library</a>
+            </p>
+            <div class="stitch"></div>
+        </header>
+
+        <main>
+            <form class="contact-box" id="contactForm">
+                <h3>Get in touch</h3>
+                <p class="contact-sub">Have an entry to suggest or a correction? Send us a message.</p>
+                <div class="contact-field">
+                    <label for="contactName">Name</label>
+                    <input type="text" id="contactName" required />
+                </div>
+                <div class="contact-field">
+                    <label for="contactMessage">Message</label>
+                    <textarea id="contactMessage" required></textarea>
+                </div>
+                <button type="submit">Send message</button>
+            </form>
+        </main>
+
+        <footer class="site-footer">
+            <div class="stitch"></div>
+            <p>
+                Compiled by
+                <a href="https://www.linkedin.com/in/siobh%C3%A1n-madden-09901b64/">Siobhán Madden (MA)</a> &middot;
+                Website by Stephen Plummer
+            </p>
+        </footer>
+        
+<script>
+    document.getElementById("contactForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        const name = document.getElementById("contactName").value;
+        const message = document.getElementById("contactMessage").value;
+        const subject = encodeURIComponent("Message from the endometriosis library");
+        const body = encodeURIComponent(`From: ${name}\n\n${message}`);
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=smadden2023@gmail.com&su=${subject}&body=${body}`;
+        window.open(gmailUrl, "_blank");
+    });
+</script>
+        
+    </body>
+</html>

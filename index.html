@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>the endometriosis library</title>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Karla:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap"
+            rel="stylesheet" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <header>
+            <div class="eyebrow"><h2>the endometriosis library</h2></div>
+            <p class="sub">papers, sites, and firsthand accounts, gathered in one place.</p>
+            <p><a href="contact">Contact</a></p>
+            <div class="stitch"></div>
+            <div class="stats" id="stats"></div>
+        </header>
+
+        <div class="toolbar">
+            <input type="text" id="search" placeholder="search the catalog..." />
+            <select id="filterEvidence">
+                <option value="">all evidence types</option>
+            </select>
+            <select id="filterSource">
+                <option value="">all source types</option>
+            </select>
+            <select id="filterPeer">
+                <option value="">peer reviewed?</option>
+                <option value="Yes">yes</option>
+                <option value="No">no</option>
+            </select>
+            <button class="clear" id="clearBtn">clear filters</button>
+        </div>
+
+        <main>
+            <div class="drawer" id="catalog"></div>
+        </main>
+
+        <footer class="site-footer">
+            <div class="stitch"></div>
+            <p>
+                Compiled by
+                <a href="https://www.linkedin.com/in/siobh%C3%A1n-madden-09901b64/">Siobhán Madden (MA)</a> &middot;
+                Website by Stephen Plummer
+            </p>
+        </footer>
+
+        <script>
+            let ALL_ROWS = [];
+
+            function renderFilters(rows) {
+                const evidences = [...new Set(rows.map((r) => r.Evidence).filter(Boolean))].sort();
+                const sources = [...new Set(rows.map((r) => r.Source).filter(Boolean))].sort();
+                const fill = (id, items) => {
+                    const sel = document.getElementById(id);
+                    items.forEach((v) => {
+                        const opt = document.createElement("option");
+                        opt.value = v;
+                        opt.textContent = v;
+                        sel.appendChild(opt);
+                    });
+                };
+                fill("filterEvidence", evidences);
+                fill("filterSource", sources);
+            }
+
+            function matchesFilters(row) {
+                const q = document.getElementById("search").value.toLowerCase().trim();
+                const evidence = document.getElementById("filterEvidence").value;
+                const source = document.getElementById("filterSource").value;
+                const peer = document.getElementById("filterPeer").value;
+
+                if (evidence && row.Evidence !== evidence) return false;
+                if (source && row.Source !== source) return false;
+                if (peer && (row["Peer Reviewed"] || "").toLowerCase() !== peer.toLowerCase()) return false;
+
+                if (q) {
+                    const haystack = [row.Title, row.Author, row.Tags, row.Summary].join(" ").toLowerCase();
+                    if (!haystack.includes(q)) return false;
+                }
+                return true;
+            }
+
+            function esc(str) {
+                if (str == null) return "";
+                const div = document.createElement("div");
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            function render() {
+                const catalog = document.getElementById("catalog");
+                const filtered = ALL_ROWS.filter(matchesFilters);
+                catalog.innerHTML = "";
+
+                if (!filtered.length) {
+                    catalog.innerHTML = `<div class="empty">no entries match that search. try clearing a filter.</div>`;
+                    return;
+                }
+
+                filtered.forEach((row, i) => {
+                    const rowEl = document.createElement("div");
+                    rowEl.className = "row";
+
+                    const tags = (row.Tags || "")
+                        .split(",")
+                        .filter(Boolean)
+                        .map((t) => `<span class="chip">${esc(t.trim())}</span>`)
+                        .join("");
+                    const isPeer = (row["Peer Reviewed"] || "").toLowerCase() === "yes";
+                    const link = (row.Link || "").trim();
+                    const doi = (row.DOI || "").trim();
+
+                    rowEl.innerHTML = `
+      <div class="row-tab"></div>
+      <div class="row-body">
+        <div class="row-main">
+          <div class="row-top">
+            <h3 class="row-title">${esc(row.Title)}</h3>
+            <span class="row-year">${esc(row.Year) || ""}</span>
+          </div>
+          <div class="row-authors">${esc(row.Author) || "—"}</div>
+          <p class="row-summary">${esc(row.Summary)}</p>
+          <div class="row-footer">
+            ${tags}
+            <span class="badge">${esc(row.Evidence) || "n/a"}</span>
+            ${isPeer ? '<span class="badge peer">peer reviewed</span>' : ""}
+            <span class="source-tag">${esc(row.Source)}</span>
+            ${doi && doi !== "-" ? `<span class="source-tag">doi: ${esc(doi)}</span>` : ""}
+            ${link ? `<a class="source-link" href="${esc(link)}" target="_blank" rel="noopener">view source ↗</a>` : ""}
+          </div>
+        </div>
+      </div>
+    `;
+
+                    catalog.appendChild(rowEl);
+                });
+            }
+
+            function renderStats() {
+                const total = ALL_ROWS.length;
+                const peer = ALL_ROWS.filter((r) => (r["Peer Reviewed"] || "").toLowerCase() === "yes").length;
+                const other = total - peer;
+                document.getElementById("stats").innerHTML = `
+    <div><b>${total}</b> entries filed</div>
+    <div><b>${peer}</b> peer reviewed</div>
+    <div><b>${other}</b> other sources</div>
+  `;
+            }
+
+            ["search", "filterEvidence", "filterSource", "filterPeer"].forEach((id) => {
+                document.getElementById(id).addEventListener("input", render);
+                document.getElementById(id).addEventListener("change", render);
+            });
+            document.getElementById("clearBtn").addEventListener("click", () => {
+                document.getElementById("search").value = "";
+                document.getElementById("filterEvidence").value = "";
+                document.getElementById("filterSource").value = "";
+                document.getElementById("filterPeer").value = "";
+                render();
+            });
+
+            Papa.parse("entries.csv", {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                transformHeader: (h) => h.trim(),
+                complete: function (results) {
+                    ALL_ROWS = results.data;
+                    renderFilters(ALL_ROWS);
+                    renderStats();
+                    render();
+                },
+                error: function (err) {
+                    document.getElementById("catalog").innerHTML =
+                        `<div class="empty">couldn't load entries.csv, make sure it's sitting in the same folder as this html file.</div>`;
+                }
+            });
+        </script>
+    </body>
+</html>
