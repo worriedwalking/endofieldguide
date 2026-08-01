@@ -21,42 +21,39 @@
             <div class="stitch"></div>
         </header>
 
-        <main>
-            <form class="contact-box" id="contactForm">
-                <h3>Get in touch</h3>
-                <p class="contact-sub">Have an entry to suggest or a correction? Send us a message.</p>
-                <div class="contact-field">
-                    <label for="contactName">Name</label>
-                    <input type="text" id="contactName" required />
-                </div>
-                <div class="contact-field">
-                    <label for="contactMessage">Message</label>
-                    <textarea id="contactMessage" required></textarea>
-                </div>
-                <button type="submit">Send message</button>
-            </form>
-        </main>
+        <form class="contact-box" id="contactForm">
+            <h3>get in touch</h3>
+            <p class="contact-sub">have an entry to suggest or a correction? send us a message.</p>
+            <div class="contact-field">
+                <label for="contactName">name</label>
+                <input type="text" id="contactName" required />
+            </div>
+            <div class="contact-field">
+                <label for="contactMessage">message</label>
+                <textarea id="contactMessage" required></textarea>
+            </div>
+            <button type="submit">send message</button>
+        </form>
 
         <footer class="site-footer">
             <div class="stitch"></div>
             <p>
-                Compiled by
-                <a href="https://www.linkedin.com/in/siobh%C3%A1n-madden-09901b64/">Siobhán Madden (MA)</a> &
-                Website cobbled together by <a href="https://www.linkedin.com/in/worriedwalking/">Stephen Plummer</a>
+                compiled by
+                <a href="https://www.linkedin.com/in/siobh%C3%A1n-madden-09901b64/">Siobhán Madden (MA)</a> & website
+                cobbled together by <a href="https://www.linkedin.com/in/worriedwalking/">Stephen Plummer</a>
             </p>
         </footer>
-        
-<script>
-    document.getElementById("contactForm").addEventListener("submit", function (e) {
-        e.preventDefault();
-        const name = document.getElementById("contactName").value;
-        const message = document.getElementById("contactMessage").value;
-        const subject = encodeURIComponent("Message from the endometriosis library");
-        const body = encodeURIComponent(`From: ${name}\n\n${message}`);
-        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=smaddenphd2023@gmail.com&su=${subject}&body=${body}`;
-        window.open(gmailUrl, "_blank");
-    });
-</script>
-        
+
+        <script>
+            document.getElementById("contactForm").addEventListener("submit", function (e) {
+                e.preventDefault();
+                const name = document.getElementById("contactName").value;
+                const message = document.getElementById("contactMessage").value;
+                const subject = encodeURIComponent("Message from the endometriosis library");
+                const body = encodeURIComponent(`From: ${name}\n\n${message}`);
+                const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=smaddenphd2023@gmail.com&su=${subject}&body=${body}`;
+                window.open(gmailUrl, "_blank");
+            });
+        </script>
     </body>
 </html>
