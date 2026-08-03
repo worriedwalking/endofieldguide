@@ -116,6 +116,7 @@
                         .map((t) => `<span class="chip">${esc(t.trim())}</span>`)
                         .join("");
                     const isPeer = (row["Peer Reviewed"] || "").toLowerCase() === "yes";
+                    const isPaywalled = (row.Paywall || "").toLowerCase() === "yes";
                     const link = (row.Link || "").trim();
                     const doi = (row.DOI || "").trim();
 
@@ -133,6 +134,7 @@
             ${tags}
             <span class="badge">${esc(row.Evidence) || "n/a"}</span>
             ${isPeer ? '<span class="badge peer">peer reviewed</span>' : ""}
+            ${isPaywalled ? '<span class="badge paywall">paywalled</span>' : ""}
             <span class="source-tag">${esc(row.Source)}</span>
             ${doi && doi !== "-" ? `<span class="source-tag">doi: ${esc(doi)}</span>` : ""}
             ${link ? `<a class="source-link" href="${esc(link)}" target="_blank" rel="noopener">view source ↗</a>` : ""}

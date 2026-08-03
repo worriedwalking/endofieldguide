@@ -15,7 +15,8 @@
 ::selection {
     background: var(--stamp-soft);
 }
-html, body {
+html,
+body {
     height: 100%;
 }
 body {
@@ -227,6 +228,12 @@ main {
 .badge.peer {
     background: var(--stamp);
 }
+
+.badge.paywall {
+    background: #f4d9c6;
+    color: #00ff2b;
+}
+
 .source-tag {
     font-size: 12px;
     color: var(--ink-soft);
