@@ -230,8 +230,7 @@ main {
 }
 
 .badge.paywall {
-    background: #f4d9c6;
-    color: #00ff2b;
+    background: var(--stamp);
 }
 
 .source-tag {
